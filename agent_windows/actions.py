@@ -81,6 +81,7 @@ class WindowsActions:
         subprocess.Popen([path])  # noqa: S603
 
     def status(self) -> dict[str, Any]:
+        # pyrefly: ignore [missing-source-for-stubs]
         import psutil
 
         battery_info = psutil.sensors_battery()
