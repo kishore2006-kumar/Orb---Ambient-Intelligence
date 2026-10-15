@@ -1,0 +1,8 @@
+-r requirements.txt
+-r agent_windows/requirements.txt
+pytest
+pytest-cov
+ruff
+mypy
+bandit
+pip-audit

@@ -1,0 +1,15 @@
+{
+  "hub_url": "http://127.0.0.1:8000",
+  "mqtt_host": "127.0.0.1",
+  "mqtt_port": 1883,
+  "mqtt_username": "orb_agent",
+  "mqtt_password": "CHANGE_ME",
+  "device_name": "HP Laptop",
+  "device_type": "laptop",
+  "device_id": null,
+  "device_token": null,
+  "app_allowlist": {
+    "notepad": "C:\\Windows\\System32\\notepad.exe",
+    "calculator": "C:\\Windows\\System32\\calc.exe"
+  }
+}

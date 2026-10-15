@@ -1,0 +1,5 @@
+paho-mqtt>=2.0
+httpx
+psutil
+pycaw; sys_platform == "win32"
+comtypes; sys_platform == "win32"
