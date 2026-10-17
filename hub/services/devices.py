@@ -7,7 +7,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from hub.clock import utcnow
+from hub import clock
 from hub.db.models import (
     Device,
     DeviceCapability,
@@ -54,7 +54,7 @@ def _create_device(
 ) -> Device:
     profile = _get_owner_profile(db)
     device_id = str(uuid.uuid4())
-    now = utcnow()
+    now = clock.utcnow()
     device = Device(
         id=device_id,
         profile_id=profile.id,

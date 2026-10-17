@@ -47,89 +47,72 @@ def bus() -> MemoryBus:
 
 @pytest.fixture
 def driver(bus: MemoryBus) -> WindowsAgentDriver:
-    return WindowsAgentDriver(bus=bus, settings=SETTINGS)
+    d = WindowsAgentDriver(bus=bus, settings=SETTINGS)
+    # Same wiring the hub does at startup (hub/main.py): acks go to the driver
+    bus.subscribe("orb/devices/+/ack", d.on_ack)
+    return d
+
+
+def _fake_agent(
+    bus: MemoryBus,
+    device_id: str,
+    *,
+    ok: bool = True,
+    error: str | None = None,
+    state: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Register a fake agent that acks every command immediately; returns the commands seen."""
+    seen: list[dict[str, Any]] = []
+
+    def on_cmd(_topic: str, payload: dict[str, Any]) -> None:
+        seen.append(payload)
+        bus.publish(
+            f"orb/devices/{device_id}/ack",
+            {
+                "command_id": payload["command_id"],
+                "token": TOKEN,
+                "ok": ok,
+                "error": error,
+                "state": state or {},
+            },
+        )
+
+    bus.subscribe(f"orb/devices/{device_id}/cmd", on_cmd)
+    return seen
 
 
 def test_command_published_to_correct_topic(bus: MemoryBus, driver: WindowsAgentDriver) -> None:
-    published: list[tuple[str, dict[str, Any]]] = []
-    bus.subscribe("orb/devices/+/cmd", lambda t, p: published.append((t, p)))
-
     device = _device()
-    # Run in thread to avoid blocking
-    t = threading.Thread(target=driver.execute, args=(device, "status", {}))
-    t.start()
-    time.sleep(0.05)
+    topics: list[str] = []
+    bus.subscribe("orb/devices/+/cmd", lambda t, _p: topics.append(t))
+    seen = _fake_agent(bus, device.id)
 
-    assert len(published) == 1
-    topic, payload = published[0]
-    assert topic == f"orb/devices/{device.id}/cmd"
-    assert payload["action"] == "status"
-    command_id = payload["command_id"]
+    result = driver.execute(device, "status", {})
 
-    # Send ack to unblock
-    bus.publish(
-        f"orb/devices/{device.id}/ack",
-        {"command_id": command_id, "token": TOKEN, "ok": True, "error": None, "state": {}},
-    )
-    t.join(timeout=1)
+    assert topics == [f"orb/devices/{device.id}/cmd"]
+    assert len(seen) == 1
+    assert seen[0]["action"] == "status"
+    assert seen[0]["params"] == {}
+    assert seen[0]["command_id"]
+    assert result.ok
 
 
 def test_valid_ack_marks_acked_and_merges_state(bus: MemoryBus, driver: WindowsAgentDriver) -> None:
     device = _device()
-    result_holder: dict[str, Any] = {}
+    _fake_agent(bus, device.id, state={"locked": True})
 
-    def run() -> None:
-        result_holder["result"] = driver.execute(device, "lock", {})
+    result = driver.execute(device, "lock", {})
 
-    t = threading.Thread(target=run)
-    t.start()
-    time.sleep(0.05)
-
-    # Find the pending command_id
-    import json
-
-    published_topic = f"orb/devices/{device.id}/cmd"
-    cmd_payload: dict[str, Any] = {}
-    bus.subscribe(published_topic, lambda t, p: cmd_payload.update(p))
-
-    # Re-trigger by publish; but we need the command_id which was already published
-    # Get it from the pending dict
-    command_id = list(driver._pending.keys())[0]
-
-    bus.publish(
-        f"orb/devices/{device.id}/ack",
-        {
-            "command_id": command_id,
-            "token": TOKEN,
-            "ok": True,
-            "error": None,
-            "state": {"locked": True},
-        },
-    )
-    t.join(timeout=1)
-    result = result_holder["result"]
     assert result.ok
     assert result.state == {"locked": True}
 
 
 def test_failed_ack_marks_failed(bus: MemoryBus, driver: WindowsAgentDriver) -> None:
     device = _device()
-    result_holder: dict[str, Any] = {}
+    _fake_agent(bus, device.id, ok=False, error="device_busy")
 
-    def run() -> None:
-        result_holder["result"] = driver.execute(device, "lock", {})
+    result = driver.execute(device, "lock", {})
 
-    t = threading.Thread(target=run)
-    t.start()
-    time.sleep(0.05)
-
-    command_id = list(driver._pending.keys())[0]
-    bus.publish(
-        f"orb/devices/{device.id}/ack",
-        {"command_id": command_id, "token": TOKEN, "ok": False, "error": "device_busy", "state": {}},
-    )
-    t.join(timeout=1)
-    result = result_holder["result"]
     assert not result.ok
     assert result.error == "device_busy"
 

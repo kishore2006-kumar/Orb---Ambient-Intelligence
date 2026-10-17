@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 from typing import Any
@@ -83,10 +84,8 @@ def make_sync_broadcast(loop: asyncio.AbstractEventLoop) -> Any:
     def _sync_broadcast(event_type: str, data: Any) -> None:
         if not _connections:
             return
-        try:
+        with contextlib.suppress(RuntimeError):  # loop already stopped
             asyncio.run_coroutine_threadsafe(broadcast(event_type, data), loop)
-        except RuntimeError:
-            pass  # loop stopped
 
     return _sync_broadcast
 

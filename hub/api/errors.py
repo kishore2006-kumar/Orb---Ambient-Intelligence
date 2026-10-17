@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
@@ -52,9 +50,7 @@ def register_error_handlers(app: FastAPI) -> None:
         if code == "too_many_attempts":
             return error_response(code, "Too many failed attempts", 429)
         if code == "confirmation_required":
-            return error_response(
-                code, "Bulk medium-risk command requires confirm=true", 409
-            )
+            return error_response(code, "Bulk medium-risk command requires confirm=true", 409)
         return error_response(code, code, 403)
 
     @app.exception_handler(TimeoutError)

@@ -7,97 +7,98 @@
 - The spec is `docs/PHASE1_MASTER_PROMPT.md`. Section numbers below refer to it.
 
 ## Current state
-- Last updated by: _(model name)_ on _(date)_
-- Last commit: _(hash)_
-- Next action: _(one concrete sentence: which file, what to do)_
-- Blockers: none
+- Last updated by: Claude (fixes T1-T12 applied and verified in a Linux sandbox) on 2026-10-16
+- Last commit: see `git log` (changes delivered as one patch on top of 8c34039)
+- Next action (human): push the branch, confirm the GitHub Actions run is green (it runs the MySQL test), then run `docs/DEVICE_CHECKLIST.md` on the real laptop and phone
+- Blockers: none. Not verified yet: GitHub Actions run, MySQL test, Windows-only OS calls, real ADB device, real Mosquitto broker
 
 ## Section 4 — fixed files
-- [ ] `.gitignore`
-- [ ] `.env.example`
-- [ ] `pyproject.toml`
-- [ ] `requirements.txt`
-- [ ] `requirements-dev.txt`
-- [ ] `agent_windows/requirements.txt`
-- [ ] `agent_windows/config.example.json`
-- [ ] `.github/workflows/ci.yml`
+- [x] `.gitignore`
+- [x] `.env.example`
+- [x] `pyproject.toml`
+- [x] `requirements.txt`
+- [x] `requirements-dev.txt`
+- [x] `agent_windows/requirements.txt`
+- [x] `agent_windows/config.example.json`
+- [x] `.github/workflows/ci.yml`
 
 ## Section 5 — database
-- [ ] `hub/clock.py` (`utcnow()`)
-- [ ] `hub/db/models.py` — all 6 tables, 7 enums, FK rules (CASCADE / SET NULL), unique constraints
-- [ ] `hub/db/session.py` — engine, SQLite foreign-key pragma, `create_all`
-- [ ] `owner` profile created on startup (once)
+- [x] `hub/clock.py` (`utcnow()`) — services must call it as `clock.utcnow()` (see T4)
+- [x] `hub/db/models.py` — all 6 tables, 7 enums, FK rules (CASCADE / SET NULL), unique constraints — `events.id` BigInteger does not autoincrement on SQLite (T3)
+- [x] `hub/db/session.py` — engine, SQLite foreign-key pragma, `create_all`
+- [x] `owner` profile created on startup (once)
 
 ## Section 6 — safety
-- [ ] `hub/services/safety.py` — 9 actions, risk tiers, param validation, bulk confirmation rule
+- [x] `hub/services/safety.py` — 9 actions, risk tiers, param validation, bulk confirmation rule
 
 ## Section 7 — message bus
-- [ ] `hub/bus/base.py`
-- [ ] `hub/bus/memory_bus.py` (with `+` and `#` wildcards)
-- [ ] `hub/bus/mqtt_bus.py` (paho v2)
+- [x] `hub/bus/base.py`
+- [x] `hub/bus/memory_bus.py` (with `+` and `#` wildcards)
+- [x] `hub/bus/mqtt_bus.py` (paho v2)
 
 ## Section 8 — drivers
-- [ ] `hub/drivers/base.py`
-- [ ] `hub/drivers/registry.py`
-- [ ] `hub/drivers/virtual.py`
-- [ ] `hub/drivers/ios_stub.py`
-- [ ] `hub/drivers/adb.py` (exact argv table, address validation, connect/pair)
-- [ ] `hub/drivers/windows_agent.py` (publish, wait for ack, token check, state subscription)
+- [x] `hub/drivers/base.py`
+- [x] `hub/drivers/registry.py`
+- [x] `hub/drivers/virtual.py`
+- [x] `hub/drivers/ios_stub.py`
+- [x] `hub/drivers/adb.py` (exact argv table, address validation, connect/pair)
+- [x] `hub/drivers/windows_agent.py` (publish, wait for ack, token check, state subscription)
 
 ## Section 9 — services and API
-- [ ] `hub/config.py` (settings, `ANDROID_APP_ALLOWLIST`)
-- [ ] `hub/security.py` (`compare_digest`)
-- [ ] `hub/schemas.py`
-- [ ] `hub/services/pairing.py` (8-char code, hashed token, rate limit)
-- [ ] `hub/services/devices.py`
-- [ ] `hub/services/commands.py` (`submit`, `submit_bulk`)
-- [ ] `hub/services/events.py`
-- [ ] `hub/api/errors.py`
-- [ ] `hub/api/deps.py`
-- [ ] `hub/api/health.py`
-- [ ] `hub/api/devices.py`
-- [ ] `hub/api/commands.py`
-- [ ] `hub/api/ws.py`
-- [ ] `hub/main.py` (`create_app` factory, lifespan, CORS)
+- [x] `hub/config.py` (settings, `ANDROID_APP_ALLOWLIST`)
+- [x] `hub/security.py` (`compare_digest`)
+- [x] `hub/schemas.py`
+- [x] `hub/services/pairing.py` (8-char code, hashed token, rate limit)
+- [x] `hub/services/devices.py`
+- [x] `hub/services/commands.py` (`submit`, `submit_bulk`)
+- [x] `hub/services/events.py`
+- [x] `hub/api/errors.py`
+- [x] `hub/api/deps.py`
+- [x] `hub/api/health.py`
+- [x] `hub/api/devices.py`
+- [x] `hub/api/commands.py`
+- [x] `hub/api/ws.py`
+- [x] `hub/main.py` (`create_app` factory, lifespan, CORS)
 
 ## Section 10 — Windows agent
-- [ ] `agent_windows/config.py`
-- [ ] `agent_windows/actions.py` (lazy Windows imports)
-- [ ] `agent_windows/client.py`
-- [ ] `agent_windows/main.py` (`pair` and `run`)
+- [x] `agent_windows/config.py`
+- [x] `agent_windows/actions.py` (lazy Windows imports)
+- [x] `agent_windows/client.py`
+- [x] `agent_windows/main.py` (`pair` and `run`)
 
 ## Section 11 — tests (mark written AND passing)
-- [ ] `tests/conftest.py`
-- [ ] `tests/hub/test_models.py`
-- [ ] `tests/hub/test_safety.py`
-- [ ] `tests/hub/test_auth.py`
-- [ ] `tests/hub/test_pairing.py`
-- [ ] `tests/hub/test_driver_virtual.py`
-- [ ] `tests/hub/test_driver_adb.py`
-- [ ] `tests/hub/test_driver_ios_stub.py`
-- [ ] `tests/hub/test_driver_windows_agent.py`
-- [ ] `tests/hub/test_devices_api.py`
-- [ ] `tests/hub/test_commands_api.py`
-- [ ] `tests/hub/test_security_static.py`
-- [ ] `tests/agent_windows/test_agent_dispatch.py`
-- [ ] `tests/agent_windows/test_actions_import.py`
+- [x] `tests/conftest.py`
+- [x] `tests/hub/test_models.py` — MySQL round-trip test is skipped locally; it runs in CI
+- [x] `tests/hub/test_safety.py`
+- [x] `tests/hub/test_auth.py`
+- [x] `tests/hub/test_pairing.py`
+- [x] `tests/hub/test_driver_virtual.py`
+- [x] `tests/hub/test_driver_adb.py`
+- [x] `tests/hub/test_driver_ios_stub.py`
+- [x] `tests/hub/test_driver_windows_agent.py`
+- [x] `tests/hub/test_devices_api.py`
+- [x] `tests/hub/test_commands_api.py`
+- [x] `tests/hub/test_security_static.py`
+- [x] `tests/agent_windows/test_agent_dispatch.py`
+- [x] `tests/agent_windows/test_actions_import.py`
 
 ## Section 12 — docs
-- [ ] `README.md`
-- [ ] `docs/ARCHITECTURE.md`
-- [ ] `docs/API_CONTRACT.md`
-- [ ] `docs/MOSQUITTO.md`
-- [ ] `docs/DEVICE_CHECKLIST.md`
-- [ ] `docs/DECISIONS.md`
-- [ ] `docs/PASS1_REPORT.md`
+- [x] `README.md`
+- [x] `docs/ARCHITECTURE.md`
+- [x] `docs/API_CONTRACT.md`
+- [x] `docs/MOSQUITTO.md`
+- [x] `docs/DEVICE_CHECKLIST.md`
+- [x] `docs/DECISIONS.md`
+- [x] `docs/PASS1_REPORT.md`
 
 ## Section 13 — verification (paste real results)
-- [ ] `ruff format .` — result:
-- [ ] `ruff check .` — result:
-- [ ] `mypy` — result:
-- [ ] `bandit -r hub agent_windows -ll` — result:
-- [ ] `pip-audit -r requirements.txt -r agent_windows/requirements.txt` — result:
-- [ ] `pytest` — _N_ passed, coverage _X_ %
+- [x] `ruff format .` — result: 68 files already formatted
+- [x] `ruff check .` — result: All checks passed
+- [x] `mypy` — result: Success: no issues found in 38 source files
+- [x] `bandit -r hub agent_windows -ll` — result: no issues
+- [x] `pip-audit -r requirements.txt -r agent_windows/requirements.txt` — result: No known vulnerabilities found
+- [x] `pytest` — 156 passed, 1 skipped (MySQL test, runs in CI), coverage 91.14 %
 
 ## Log (newest first; one line per checkpoint)
+- 2026-10-16 — Claude — tasks T1-T12: test/engine/events/clock fixes, MqttBus topic-filter bug, token default removed, 33 new tests, 7 docs, all checks green — (patch)
 - _(date)_ — _(model)_ — _(what changed)_ — _(commit hash)_

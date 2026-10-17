@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import subprocess
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -172,8 +172,8 @@ def test_adb_device_creation_flow(fake_runner: FakeAdbRunner) -> None:
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
 
-    from hub.db.models import Base, Profile
     from hub.clock import utcnow
+    from hub.db.models import Base, Profile
 
     engine = create_engine("sqlite://")
     Base.metadata.create_all(engine)

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.orm import Session
@@ -43,10 +43,13 @@ def _device_to_out(device: Device) -> DeviceOut:
 
 @router.post("/devices/pair/start", dependencies=[Depends(require_hub_token)])
 def pair_start(
+    request: Request,
     body: PairStartRequest,
     db: Annotated[Session, Depends(get_db)],
 ) -> PairStartResponse:
-    pairing = pairing_svc.start_pairing(db, body.device_type, body.os)
+    pairing = pairing_svc.start_pairing(
+        db, body.device_type, body.os, settings=request.app.state.settings
+    )
     return PairStartResponse(code=pairing.code, expires_at=pairing.expires_at)
 
 

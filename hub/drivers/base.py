@@ -26,7 +26,7 @@ class DeviceDriver(abc.ABC):
     @abc.abstractmethod
     def execute(
         self,
-        device: "Device",
+        device: Device,
         action: str,
         params: dict[str, Any],
     ) -> DriverResult:

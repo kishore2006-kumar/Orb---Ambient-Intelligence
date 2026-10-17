@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from sqlalchemy.orm import Session
 
-from hub.clock import utcnow
+from hub import clock
 from hub.db.models import Command, CommandSource, CommandStatus, Risk
 from hub.drivers.registry import get_driver
-from hub.services.safety import KNOWN_ACTIONS, get_risk, validate_action, validate_params
+from hub.services.safety import get_risk, validate_action, validate_params
 
 
 def _device_has_capability(device: Any, action: str) -> bool:
@@ -77,7 +78,7 @@ def submit(
         raise ValueError(msg)
 
     risk: Risk = get_risk(action)
-    now = utcnow()
+    now = clock.utcnow()
     command = Command(
         id=str(uuid.uuid4()),
         device_id=device_id,
@@ -93,7 +94,10 @@ def submit(
         completed_at=None,
     )
     db.add(command)
-    db.flush()
+    # Commit the pending row BEFORE running the driver: it is a durable audit record even if
+    # the process dies mid-command, and driver callbacks that use their own sessions cannot
+    # roll it back.
+    db.commit()
 
     # Execute via driver
     driver = get_driver(device.driver)
@@ -103,11 +107,11 @@ def submit(
         result_err = str(exc)[:200]
         command.status = CommandStatus.failed
         command.error = result_err
-        command.completed_at = utcnow()
+        command.completed_at = clock.utcnow()
         db.commit()
         return command
 
-    completed_at = utcnow()
+    completed_at = clock.utcnow()
 
     if result.error == "timeout":
         command.status = CommandStatus.timeout

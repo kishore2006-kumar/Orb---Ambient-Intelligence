@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import abc
-from typing import Any, Callable
+import re
+from collections.abc import Callable
+from typing import Any
 
 
 class MessageBus(abc.ABC):
@@ -28,3 +30,9 @@ class MessageBus(abc.ABC):
         callback: Callable[[str, dict[str, Any]], None],
     ) -> None:
         """Subscribe to a topic filter. Callback receives (topic, payload)."""
+
+
+def topic_matches(filter_: str, topic: str) -> bool:
+    """Return True if `topic` matches an MQTT wildcard `filter_` ('+' one level, '#' the rest)."""
+    regex = re.escape(filter_).replace(r"\#", ".*").replace(r"\+", "[^/]+")
+    return bool(re.fullmatch(regex, topic))

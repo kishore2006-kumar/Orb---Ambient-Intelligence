@@ -6,6 +6,7 @@ import inspect
 
 import pytest
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 from tests.conftest import AUTH
 
@@ -27,7 +28,9 @@ def test_wrong_token_401_devices(client: TestClient) -> None:
 
 
 def test_missing_token_401_commands(client: TestClient) -> None:
-    resp = client.post("/commands", json={"device_id": "x", "action": "lock", "params": {}, "source": "api"})
+    resp = client.post(
+        "/commands", json={"device_id": "x", "action": "lock", "params": {}, "source": "api"}
+    )
     assert resp.status_code == 401
 
 
@@ -72,9 +75,9 @@ def test_pair_confirm_needs_no_hub_token(client: TestClient) -> None:
 
 
 def test_ws_rejects_bad_token(client: TestClient) -> None:
-    with client.websocket_connect("/ws/ui?token=bad") as ws:
-        with pytest.raises(Exception):
-            ws.receive_text()
+    with pytest.raises(WebSocketDisconnect) as exc, client.websocket_connect("/ws/ui?token=bad"):
+        pass
+    assert exc.value.code == 1008
 
 
 def test_ws_receives_command_update(client: TestClient) -> None:
@@ -102,6 +105,7 @@ def test_ws_receives_command_update(client: TestClient) -> None:
         msg = ws.receive_text()
         t.join()
         import json
+
         data = json.loads(msg)
         assert data["type"] == "command_update"
 

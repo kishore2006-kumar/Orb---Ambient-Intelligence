@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import paho.mqtt.client as mqtt
+from paho.mqtt.enums import CallbackAPIVersion
 
-from hub.bus.base import MessageBus
+from hub.bus.base import MessageBus, topic_matches
 from hub.config import Settings, get_settings
 
 logger = logging.getLogger(__name__)
@@ -19,7 +21,7 @@ class MqttBus(MessageBus):
 
     def __init__(self, settings: Settings | None = None) -> None:
         self._settings = settings or get_settings()
-        self._client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+        self._client = mqtt.Client(CallbackAPIVersion.VERSION2)
         self._subscribers: list[tuple[str, Callable[[str, dict[str, Any]], None]]] = []
         self._client.on_connect = self._on_connect
         self._client.on_message = self._on_message
@@ -55,9 +57,11 @@ class MqttBus(MessageBus):
             return
 
         for filter_, callback in list(self._subscribers):
+            if not topic_matches(filter_, topic):
+                continue
             try:
                 callback(topic, data)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 logger.exception("MqttBus: subscriber error on topic %s", topic)
 
     def start(self) -> None:

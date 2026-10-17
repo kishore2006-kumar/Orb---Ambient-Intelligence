@@ -1,4 +1,4 @@
-"""Windows agent main entry point.
+r"""Windows agent main entry point.
 
 Usage (from orb-project\):
   python -m agent_windows.main pair --code <CODE>
@@ -15,6 +15,7 @@ import time
 from typing import Any
 
 import paho.mqtt.client as mqtt
+from paho.mqtt.enums import CallbackAPIVersion
 
 from agent_windows.actions import WindowsActions
 from agent_windows.client import pair_with_hub
@@ -109,9 +110,11 @@ def cmd_run(config_path: str | None) -> None:
     ack_topic = f"orb/devices/{device_id}/ack"
     state_topic = f"orb/devices/{device_id}/state"
 
-    will_payload = json.dumps({"token": device_token, "online": False, "battery": None, "state": {}})
+    will_payload = json.dumps(
+        {"token": device_token, "online": False, "battery": None, "state": {}}
+    )
 
-    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+    client = mqtt.Client(CallbackAPIVersion.VERSION2)
     client.username_pw_set(config["mqtt_username"], config["mqtt_password"])
     client.will_set(state_topic, will_payload, qos=1, retain=False)
 
@@ -154,13 +157,15 @@ def cmd_run(config_path: str | None) -> None:
         if action not in AGENT_CAPABILITIES:
             cl.publish(
                 ack_topic,
-                json.dumps({
-                    "command_id": command_id,
-                    "token": device_token,
-                    "ok": False,
-                    "error": "unsupported_action",
-                    "state": state,
-                }),
+                json.dumps(
+                    {
+                        "command_id": command_id,
+                        "token": device_token,
+                        "ok": False,
+                        "error": "unsupported_action",
+                        "state": state,
+                    }
+                ),
             )
             return
 
@@ -201,13 +206,15 @@ def cmd_run(config_path: str | None) -> None:
 
         cl.publish(
             ack_topic,
-            json.dumps({
-                "command_id": command_id,
-                "token": device_token,
-                "ok": ok,
-                "error": error,
-                "state": state,
-            }),
+            json.dumps(
+                {
+                    "command_id": command_id,
+                    "token": device_token,
+                    "ok": ok,
+                    "error": error,
+                    "state": state,
+                }
+            ),
         )
 
     client.on_connect = on_connect

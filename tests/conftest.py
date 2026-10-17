@@ -2,17 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any, Generator
+from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from hub.bus.memory_bus import MemoryBus
 from hub.config import Settings
-from hub.db.models import Base
 from hub.drivers.adb import RunResult
 
 AUTH = {"X-Hub-Token": "test-token"}
@@ -70,7 +66,7 @@ def client(
     fake_adb: FakeAdbRunner,
 ) -> Generator[TestClient, None, None]:
     """FastAPI test client with in-memory DB and bus."""
-    from hub.drivers.registry import clear_injected_drivers, _registry
+    from hub.drivers.registry import _registry, clear_injected_drivers
 
     _registry.clear()
     clear_injected_drivers()

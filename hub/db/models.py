@@ -19,20 +19,19 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-
 # ---------------------------------------------------------------------------
 # Enums (StrEnum so values are plain strings in the DB)
 # ---------------------------------------------------------------------------
 
 
-class DeviceType(str, enum.Enum):
+class DeviceType(enum.StrEnum):
     phone = "phone"
     tablet = "tablet"
     laptop = "laptop"
     pc = "pc"
 
 
-class DeviceOS(str, enum.Enum):
+class DeviceOS(enum.StrEnum):
     android = "android"
     windows = "windows"
     ios = "ios"
@@ -41,32 +40,32 @@ class DeviceOS(str, enum.Enum):
     linux = "linux"
 
 
-class DriverKind(str, enum.Enum):
+class DriverKind(enum.StrEnum):
     windows_agent = "windows_agent"
     adb = "adb"
     ios_stub = "ios_stub"
     virtual = "virtual"
 
 
-class DeviceStatus(str, enum.Enum):
+class DeviceStatus(enum.StrEnum):
     online = "online"
     offline = "offline"
     unknown = "unknown"
 
 
-class Risk(str, enum.Enum):
+class Risk(enum.StrEnum):
     safe = "safe"
     medium = "medium"
 
 
-class CommandStatus(str, enum.Enum):
+class CommandStatus(enum.StrEnum):
     pending = "pending"
     acked = "acked"
     failed = "failed"
     timeout = "timeout"
 
 
-class CommandSource(str, enum.Enum):
+class CommandSource(enum.StrEnum):
     voice = "voice"
     ui = "ui"
     gesture = "gesture"
@@ -114,9 +113,7 @@ class Device(Base):
         Enum(DeviceStatus), nullable=False, default=DeviceStatus.unknown
     )
     battery: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
-    state_json: Mapped[dict[str, Any]] = mapped_column(
-        JSON, nullable=False, default=lambda: {}
-    )
+    state_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=lambda: {})
     last_seen: Mapped[datetime | None] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(nullable=False)
 
@@ -174,7 +171,9 @@ class PairingCode(Base):
 class Event(Base):
     __tablename__ = "events"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True
+    )
     device_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("devices.id", ondelete="SET NULL"), nullable=True
     )

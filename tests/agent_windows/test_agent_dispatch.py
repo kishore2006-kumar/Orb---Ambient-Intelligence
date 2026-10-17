@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import json
-import sys
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+TEST_TOKEN = "my-token"
 
 
 class FakeActions:
@@ -50,7 +51,7 @@ class FakeActions:
 def _make_client_with_fake_actions(
     fake_actions: FakeActions,
     device_id: str = "dev-123",
-    device_token: str = "my-token",
+    device_token: str = TEST_TOKEN,
     app_allowlist: dict[str, str] | None = None,
 ) -> tuple[Any, list[dict[str, Any]]]:
     """Create a mock MQTT client and run a simulated on_message call."""
@@ -70,7 +71,7 @@ def _dispatch(
     action: str,
     params: dict[str, Any],
     fake_actions: FakeActions,
-    device_token: str = "my-token",
+    device_token: str = TEST_TOKEN,
     app_allowlist: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Simulate on_message dispatch and return the ack payload."""
@@ -93,13 +94,15 @@ def _dispatch(
     if action not in AGENT_CAPABILITIES:
         client.publish(
             ack_topic,
-            json.dumps({
-                "command_id": command_id,
-                "token": device_token,
-                "ok": False,
-                "error": "unsupported_action",
-                "state": state,
-            }),
+            json.dumps(
+                {
+                    "command_id": command_id,
+                    "token": device_token,
+                    "ok": False,
+                    "error": "unsupported_action",
+                    "state": state,
+                }
+            ),
         )
     else:
         ok = True
@@ -138,19 +141,23 @@ def _dispatch(
 
         client.publish(
             ack_topic,
-            json.dumps({
-                "command_id": command_id,
-                "token": device_token,
-                "ok": ok,
-                "error": error,
-                "state": state,
-            }),
+            json.dumps(
+                {
+                    "command_id": command_id,
+                    "token": device_token,
+                    "ok": ok,
+                    "error": error,
+                    "state": state,
+                }
+            ),
         )
 
     return published[0] if published else {}
 
 
-@pytest.mark.parametrize("action", ["lock", "sleep", "mute", "unmute", "volume_up", "volume_down", "status"])
+@pytest.mark.parametrize(
+    "action", ["lock", "sleep", "mute", "unmute", "volume_up", "volume_down", "status"]
+)
 def test_each_action_calls_matching_method(action: str) -> None:
     fa = FakeActions()
     ack = _dispatch(action, {}, fa)
@@ -169,7 +176,6 @@ def test_unsupported_action_acked_false() -> None:
 def test_invalid_json_ignored() -> None:
     """Invalid JSON on cmd topic should be silently ignored (no crash)."""
     # Simulate on_message receiving bad JSON
-    from unittest.mock import MagicMock
 
     msg = MagicMock()
     msg.payload = b"not json"
@@ -226,11 +232,13 @@ def test_missing_config_exits_2(tmp_path: Any) -> None:
     import os
 
     non_existent = str(tmp_path / "no_config.json")
-    with patch.dict(os.environ, {"AGENT_CONFIG": non_existent}):
-        with pytest.raises(SystemExit) as exc_info:
-            from agent_windows.config import load_config
+    from agent_windows.config import load_config
 
-            load_config(non_existent)
+    with (
+        patch.dict(os.environ, {"AGENT_CONFIG": non_existent}),
+        pytest.raises(SystemExit) as exc_info,
+    ):
+        load_config(non_existent)
     assert exc_info.value.code == 2
 
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import ast
-import os
 import re
 from pathlib import Path
 
@@ -13,8 +12,7 @@ _ROOT = Path(__file__).parent.parent.parent
 
 def _py_files(*dirs: str):  # type: ignore[return]
     for d in dirs:
-        for path in (_ROOT / d).rglob("*.py"):
-            yield path
+        yield from (_ROOT / d).rglob("*.py")
 
 
 def test_no_shell_true() -> None:

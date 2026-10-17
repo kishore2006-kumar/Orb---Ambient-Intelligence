@@ -9,7 +9,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from hub.clock import utcnow
+from hub import clock
 from hub.config import Settings, get_settings
 from hub.db.models import (
     DeviceCapability,
@@ -61,7 +61,7 @@ def start_pairing(
 
     s = settings or get_settings()
     code = "".join(secrets.choice(_CODE_ALPHABET) for _ in range(_CODE_LENGTH))
-    now = utcnow()
+    now = clock.utcnow()
     expires_delta = s.pairing_code_ttl_seconds
 
     from datetime import timedelta
@@ -104,7 +104,7 @@ def confirm_pairing(
         msg = "invalid_code"
         raise KeyError(msg)
 
-    now = utcnow()
+    now = clock.utcnow()
     if pairing.expires_at < now:
         _record_failure()
         msg = "code_expired"

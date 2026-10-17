@@ -42,7 +42,6 @@ def init_default_drivers(
     adb_runner: Any = None,
 ) -> None:
     """Register all default driver instances. Called from app factory."""
-    from hub.bus.base import MessageBus
     from hub.config import Settings, get_settings
     from hub.drivers.adb import AdbDriver, SubprocessAdbRunner
     from hub.drivers.ios_stub import IosStubDriver

@@ -6,7 +6,6 @@ import json
 import threading
 import time
 
-import pytest
 from fastapi.testclient import TestClient
 
 from tests.conftest import AUTH
@@ -86,6 +85,7 @@ def test_ws_event_emitted(client: TestClient) -> None:
     device_id = _create_virtual(client, "ws_cmd_dev")
 
     with client.websocket_connect("/ws/ui?token=test-token") as ws:
+
         def send_cmd() -> None:
             time.sleep(0.05)
             client.post(

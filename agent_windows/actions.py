@@ -51,8 +51,8 @@ class WindowsActions:
         self._set_mute(False)
 
     def _set_mute(self, muted: bool) -> None:  # pragma: no cover
-        import comtypes  # type: ignore[import]
-        from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume  # type: ignore[import]
+        import comtypes
+        from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 
         devices = AudioUtilities.GetSpeakers()
         interface = devices.Activate(IAudioEndpointVolume._iid_, comtypes.CLSCTX_ALL, None)
@@ -66,8 +66,8 @@ class WindowsActions:
         self._adjust_volume(-0.10)
 
     def _adjust_volume(self, delta: float) -> None:  # pragma: no cover
-        import comtypes  # type: ignore[import]
-        from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume  # type: ignore[import]
+        import comtypes
+        from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 
         devices = AudioUtilities.GetSpeakers()
         interface = devices.Activate(IAudioEndpointVolume._iid_, comtypes.CLSCTX_ALL, None)

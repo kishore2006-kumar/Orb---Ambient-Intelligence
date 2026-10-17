@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import logging
 import threading
 import uuid
-from datetime import datetime
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
+from hub import clock
 from hub.bus.base import MessageBus
 from hub.config import Settings, get_settings
 from hub.db.models import DeviceStatus
@@ -33,9 +33,7 @@ class WindowsAgentDriver(DeviceDriver):
         # state_update_callback set by hub init for WebSocket broadcasts
         self._state_callbacks: list[Callable[[str, dict[str, Any]], None]] = []
 
-    def add_state_callback(
-        self, callback: Callable[[str, dict[str, Any]], None]
-    ) -> None:
+    def add_state_callback(self, callback: Callable[[str, dict[str, Any]], None]) -> None:
         """Register a callback invoked when a device state message arrives."""
         self._state_callbacks.append(callback)
 
@@ -118,7 +116,7 @@ class WindowsAgentDriver(DeviceDriver):
                     "command_id": command_id,
                     "action": action,
                     "params": params,
-                    "ts": datetime.utcnow().isoformat(),
+                    "ts": clock.utcnow().isoformat(),
                 },
             )
 

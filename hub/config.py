@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 
 # Android app allowlist — constant; never user-supplied.
 ANDROID_APP_ALLOWLIST: dict[str, str] = {
@@ -18,16 +18,23 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    hub_api_token: str = "CHANGE_ME_long_random_string"
+    hub_api_token: str = Field(default="", validate_default=True)
     database_url: str = "sqlite://"
     mqtt_host: str = "127.0.0.1"
     mqtt_port: int = 1883
     mqtt_username: str = "orb_hub"
-    mqtt_password: str = "CHANGE_ME"
+    mqtt_password: str = ""
     command_timeout_seconds: float = 10.0
     pairing_code_ttl_seconds: int = 300
     adb_path: str = "adb"
     cors_origins: str = "http://localhost:5500,http://127.0.0.1:5500"
+
+    @field_validator("hub_api_token")
+    @classmethod
+    def _token_must_be_set(cls, value: str) -> str:
+        if not value or value.startswith("CHANGE_ME"):
+            raise ValueError("Set HUB_API_TOKEN in .env to a long random string")
+        return value
 
     @property
     def cors_origins_list(self) -> list[str]:

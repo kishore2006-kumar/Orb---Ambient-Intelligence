@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from hub.services.safety import KNOWN_ACTIONS, get_risk, validate_action, validate_params
 from hub.db.models import Risk
+from hub.services.safety import get_risk
 from tests.conftest import AUTH
 
 
@@ -78,7 +78,12 @@ def test_launch_app_valid_param(client: TestClient) -> None:
 
     resp = client.post(
         "/commands",
-        json={"device_id": device_id, "action": "launch_app", "params": {"app": "notepad"}, "source": "api"},
+        json={
+            "device_id": device_id,
+            "action": "launch_app",
+            "params": {"app": "notepad"},
+            "source": "api",
+        },
         headers=AUTH,
     )
     assert resp.status_code == 200
@@ -94,7 +99,12 @@ def test_non_launch_actions_reject_params(client: TestClient) -> None:
 
     resp = client.post(
         "/commands",
-        json={"device_id": device_id, "action": "lock", "params": {"extra": "bad"}, "source": "api"},
+        json={
+            "device_id": device_id,
+            "action": "lock",
+            "params": {"extra": "bad"},
+            "source": "api",
+        },
         headers=AUTH,
     )
     assert resp.status_code == 422
@@ -111,7 +121,13 @@ def test_bulk_medium_requires_confirm(client: TestClient) -> None:
 
     resp = client.post(
         "/commands/bulk",
-        json={"device_ids": [device_id], "action": "lock", "params": {}, "source": "api", "confirm": False},
+        json={
+            "device_ids": [device_id],
+            "action": "lock",
+            "params": {},
+            "source": "api",
+            "confirm": False,
+        },
         headers=AUTH,
     )
     assert resp.status_code == 409
@@ -132,7 +148,13 @@ def test_bulk_safe_needs_no_confirm(client: TestClient) -> None:
 
     resp = client.post(
         "/commands/bulk",
-        json={"device_ids": [device_id], "action": "status", "params": {}, "source": "api", "confirm": False},
+        json={
+            "device_ids": [device_id],
+            "action": "status",
+            "params": {},
+            "source": "api",
+            "confirm": False,
+        },
         headers=AUTH,
     )
     assert resp.status_code == 200
@@ -149,7 +171,13 @@ def test_bulk_skips_devices_without_capability(client: TestClient) -> None:
 
     resp = client.post(
         "/commands/bulk",
-        json={"device_ids": [ios_id], "action": "lock", "params": {}, "source": "api", "confirm": True},
+        json={
+            "device_ids": [ios_id],
+            "action": "lock",
+            "params": {},
+            "source": "api",
+            "confirm": True,
+        },
         headers=AUTH,
     )
     assert resp.status_code == 200

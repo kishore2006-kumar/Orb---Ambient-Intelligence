@@ -4,21 +4,12 @@ from __future__ import annotations
 
 import json
 import logging
-import re
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-from hub.bus.base import MessageBus
+from hub.bus.base import MessageBus, topic_matches
 
 logger = logging.getLogger(__name__)
-
-
-def _topic_matches(filter_: str, topic: str) -> bool:
-    """Return True if topic matches an MQTT wildcard filter."""
-    # Convert MQTT wildcards to a regex
-    # '#' matches everything remaining (including '/')
-    # '+' matches one level (no '/')
-    regex = re.escape(filter_).replace(r"\#", ".*").replace(r"\+", "[^/]+")
-    return bool(re.fullmatch(regex, topic))
 
 
 class MemoryBus(MessageBus):
@@ -42,7 +33,7 @@ class MemoryBus(MessageBus):
             return
 
         for filter_, callback in list(self._subscribers):
-            if _topic_matches(filter_, topic):
+            if topic_matches(filter_, topic):
                 try:
                     data = json.loads(raw)
                     if not isinstance(data, dict):

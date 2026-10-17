@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,7 +19,7 @@ from hub.api.errors import register_error_handlers
 from hub.bus.base import MessageBus
 from hub.config import Settings, get_settings
 from hub.db.models import Base, Profile
-from hub.db.session import get_session_factory, reset_engine
+from hub.db.session import make_engine, reset_engine
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +28,11 @@ def _ensure_owner_profile(session_factory: sessionmaker) -> None:  # type: ignor
     """Create the owner profile if it doesn't exist."""
     db = session_factory()
     try:
-        from hub.clock import utcnow
+        from hub import clock
 
         existing = db.query(Profile).filter_by(name="owner").first()
         if existing is None:
-            profile = Profile(name="owner", pin_hash=None, created_at=utcnow())
+            profile = Profile(name="owner", pin_hash=None, created_at=clock.utcnow())
             db.add(profile)
             db.commit()
             logger.info("Created owner profile")
@@ -51,20 +52,7 @@ def create_app(
     if settings is not None:
         reset_engine()
 
-    from sqlalchemy import create_engine, event
-
-    engine = create_engine(s.database_url)
-
-    # Enable FK enforcement for SQLite
-    if "sqlite" in s.database_url:
-
-        @event.listens_for(engine, "connect")
-        def set_sqlite_pragma(dbapi_conn: Any, _: Any) -> None:
-            cursor = dbapi_conn.cursor()
-            cursor.execute("PRAGMA foreign_keys=ON")
-            cursor.close()
-
-    from sqlalchemy.pool import StaticPool
+    engine = make_engine(s.database_url)
 
     session_factory: sessionmaker = sessionmaker(  # type: ignore[type-arg]
         autocommit=False, autoflush=False, bind=engine
@@ -143,10 +131,9 @@ def _setup_subscriptions(
     """Subscribe to MQTT topics for ack and state messages."""
     import hashlib
 
-    from hub.clock import utcnow
-    from hub.db.models import Device, DeviceStatus
+    from hub import clock
+    from hub.db.models import Device, DeviceStatus, DriverKind
     from hub.drivers.registry import get_driver
-    from hub.db.models import DriverKind
 
     def _sha256(token: str) -> str:
         return hashlib.sha256(token.encode()).hexdigest()
@@ -211,7 +198,7 @@ def _setup_subscriptions(
             if battery is not None:
                 device.battery = battery
             device.state_json = new_state
-            device.last_seen = utcnow()
+            device.last_seen = clock.utcnow()
 
             state_changed = new_state != old_state
             if state_changed:

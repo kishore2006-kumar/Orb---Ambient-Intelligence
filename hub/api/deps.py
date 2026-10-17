@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Annotated
 
 from fastapi import Header, Request
+from sqlalchemy.orm import Session
 
 
 class HubAuthError(Exception):
@@ -24,7 +26,7 @@ def require_hub_token(
     return x_hub_token
 
 
-def get_db(request: Request):  # type: ignore[return]
+def get_db(request: Request) -> Iterator[Session]:
     """FastAPI dependency: yield a DB session."""
     factory = request.app.state.session_factory
     db = factory()

@@ -63,6 +63,7 @@ orb-project/
 │   ├── requirements.txt
 │   └── config.example.json
 └── tests/
+    ├── __init__.py
     ├── conftest.py
     ├── hub/   {__init__.py, test_models.py, test_safety.py, test_auth.py, test_pairing.py,
     │          test_driver_virtual.py, test_driver_adb.py, test_driver_ios_stub.py,
@@ -227,6 +228,14 @@ jobs:
       - run: pip-audit -r requirements.txt -r agent_windows/requirements.txt
       - run: pytest
 ```
+
+## 4b. ERRATA (v2) — these four rules override anything above
+
+1. **`tests/__init__.py` must exist** (empty). Without it, the folders `tests/hub` and `tests/agent_windows` are imported as top-level packages named `hub` and `agent_windows`, which shadow the real packages and break every import.
+2. **SQLite engine in `create_app`:** when `database_url` contains `sqlite`, create the engine with `connect_args={"check_same_thread": False}` and `poolclass=StaticPool`; otherwise tests lose their tables. Engine creation must live in **one** place (`hub/db/session.py`), used by `create_app`.
+3. **`events.id`** must be `BigInteger().with_variant(Integer, "sqlite")` with `primary_key=True, autoincrement=True`, otherwise inserts fail on SQLite.
+4. **Clock:** services must call `from hub import clock` then `clock.utcnow()` (never `from hub.clock import utcnow`), so tests can monkeypatch `hub.clock.utcnow`.
+5. **Test-writing rules:** WebSocket rejection tests use `pytest.raises(WebSocketDisconnect)` around `client.websocket_connect(...)` and assert close code 1008. Windows-agent driver tests must **not** use threads and `time.sleep`; they register a fake agent as a `MemoryBus` subscriber on the `cmd` topic that publishes the ack immediately.
 
 ## 5. Step B — database (`hub/db/models.py`, `hub/db/session.py`)
 

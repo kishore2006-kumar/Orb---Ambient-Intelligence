@@ -169,7 +169,9 @@ def test_mysql_roundtrip_json_column() -> None:
     db = factory()
 
     try:
-        p = Profile(name=f"owner_{uuid.uuid4().hex[:8]}", pin_hash=None, created_at=datetime.utcnow())
+        p = Profile(
+            name=f"owner_{uuid.uuid4().hex[:8]}", pin_hash=None, created_at=datetime.utcnow()
+        )
         db.add(p)
         db.commit()
         db.refresh(p)

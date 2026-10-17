@@ -60,8 +60,9 @@ def test_no_secret_fields_in_responses(client: TestClient) -> None:
 
 
 def test_list_ordered_by_created_at(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    import hub.clock as clock_module
     from datetime import datetime, timedelta
+
+    import hub.clock as clock_module
 
     base = datetime(2024, 1, 1, 12, 0, 0)
     times = [base, base + timedelta(seconds=1), base + timedelta(seconds=2)]

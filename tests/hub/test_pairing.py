@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -106,8 +105,9 @@ def test_code_single_use(client: TestClient) -> None:
 
 
 def test_expired_code_rejected(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    import hub.clock as clock_module
     from datetime import datetime
+
+    import hub.clock as clock_module
 
     resp = client.post(
         "/devices/pair/start",

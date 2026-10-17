@@ -6,7 +6,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from hub.clock import utcnow
+from hub import clock
 from hub.db.models import Event
 
 
@@ -21,7 +21,7 @@ def write_event(
         device_id=device_id,
         kind=kind,
         payload=payload,
-        ts=utcnow(),
+        ts=clock.utcnow(),
     )
     db.add(event)
     db.flush()
