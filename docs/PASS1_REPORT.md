@@ -4,13 +4,13 @@ Verified on 2026-10-16 in a Linux sandbox (Python 3.12.3), from the repo root wi
 
 | Check | Command | Result |
 |---|---|---|
-| Format | `ruff format --check .` | 68 files already formatted |
+| Format | `ruff format --check .` | 69 files already formatted |
 | Lint | `ruff check .` | All checks passed |
 | Types | `mypy` | Success: no issues found in 38 source files |
 | Security scan | `bandit -r hub agent_windows -ll` | No issues |
 | Dependency audit | `pip-audit -r requirements.txt -r agent_windows/requirements.txt` | No known vulnerabilities found |
-| Tests | `pytest` | 156 passed, 1 skipped |
-| Coverage | `pytest` (threshold 85 %) | 91.14 % |
+| Tests | `pytest` | 181 passed, 1 skipped |
+| Coverage | `pytest` (threshold 85 %) | 92.23 % |
 
 ## Not verified yet
 

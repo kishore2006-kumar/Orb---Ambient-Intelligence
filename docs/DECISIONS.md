@@ -8,7 +8,7 @@
 6. **`HUB_API_TOKEN` has no default.** The placeholder `CHANGE_ME…` and an empty value are rejected at startup.
 7. **`POST /devices/pair/start`** now uses the app's injected settings (it previously read global settings and ignored the configured code lifetime).
 8. **Ack wiring:** the hub subscribes acks and state in `hub/main.py`; the driver tests replicate that wiring with a fake agent on the `MemoryBus`.
-9. **Extra test files** were added only to reach the coverage threshold: `test_mqtt_bus.py`, `test_agent_client.py`, `test_agent_main_flow.py`, `test_main_wiring.py`.
+9. **Extra test files** were added only to reach the coverage threshold: `test_mqtt_bus.py`, `test_agent_client.py`, `test_agent_main_flow.py`, `test_main_wiring.py`, `test_coverage_t7.py` (left by an earlier Codex session; two wrong `make_engine` tests were rewritten).
 10. **MySQL test** is skipped locally unless `MYSQL_TEST_URL` is set; it runs in CI against a MySQL 8 service container.
 11. **Agent `volume`** in the state message stays `null`; reading the real volume is left for a later phase.
 12. **Pending commands are committed before the driver runs.** The audit row survives a crash mid-command, and callbacks that use their own sessions cannot roll it back.

@@ -4,12 +4,10 @@ and uncovered branches of windows_agent driver."""
 from __future__ import annotations
 
 import json
-import threading
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # hub/bus/mqtt_bus.py — monkeypatch paho client
@@ -236,9 +234,11 @@ def test_pair_with_hub_http_error_raises() -> None:
     def fake_client_ctx(**kw: Any) -> Any:
         yield mock_client
 
-    with patch("agent_windows.client.httpx.Client", fake_client_ctx):
-        with pytest.raises(httpx.HTTPStatusError):
-            pair_with_hub("http://hub.local", "BADCODE", "Device", ["status"])
+    with (
+        patch("agent_windows.client.httpx.Client", fake_client_ctx),
+        pytest.raises(httpx.HTTPStatusError),
+    ):
+        pair_with_hub("http://hub.local", "BADCODE", "Device", ["status"])
 
 
 # ---------------------------------------------------------------------------
@@ -292,7 +292,9 @@ def test_build_heartbeat_structure() -> None:
         def status(self) -> dict[str, Any]:
             return {"battery": 75, "locked": False}
 
-    hb = _build_heartbeat("tok", FakeActions(), {"locked": False, "muted": False, "volume": None, "asleep": False})  # type: ignore[arg-type]
+    hb = _build_heartbeat(
+        "tok", FakeActions(), {"locked": False, "muted": False, "volume": None, "asleep": False}
+    )  # type: ignore[arg-type]
     assert hb["token"] == "tok"
     assert hb["online"] is True
     assert "battery" in hb
@@ -305,50 +307,31 @@ def test_build_heartbeat_structure() -> None:
 
 
 def test_make_engine_sqlite_uses_static_pool() -> None:
-    """make_engine for sqlite:// uses StaticPool and check_same_thread=False."""
+    """SQLite URLs get a StaticPool so in-memory databases are shared between sessions."""
     from sqlalchemy.pool import StaticPool
 
-    from hub.config import Settings
     from hub.db.session import make_engine
 
-    s = Settings(
-        hub_api_token="t",
-        database_url="sqlite://",
-        mqtt_host="127.0.0.1",
-        mqtt_port=1883,
-        mqtt_username="u",
-        mqtt_password="p",
-        command_timeout_seconds=1,
-        pairing_code_ttl_seconds=300,
-        adb_path="adb",
-        cors_origins="http://localhost",
-    )
-    engine = make_engine(s)
-    assert isinstance(engine.pool, StaticPool)
+    assert isinstance(make_engine("sqlite://").pool, StaticPool)
 
 
-def test_make_engine_non_sqlite_no_static_pool() -> None:
-    """make_engine for non-sqlite does not use StaticPool."""
+def test_make_engine_enforces_sqlite_foreign_keys() -> None:
+    from sqlalchemy import text
+
+    from hub.db.session import make_engine
+
+    with make_engine("sqlite://").connect() as conn:
+        assert conn.execute(text("PRAGMA foreign_keys")).scalar() == 1
+
+
+def test_make_engine_non_sqlite_uses_regular_pool() -> None:
+    """Other databases (MySQL) get a normal pool; creating the engine does not connect."""
     from sqlalchemy.pool import StaticPool
 
-    from hub.config import Settings
     from hub.db.session import make_engine
 
-    s = Settings(
-        hub_api_token="t",
-        database_url="sqlite:///file:memdb?mode=memory&cache=shared&uri=true",
-        mqtt_host="127.0.0.1",
-        mqtt_port=1883,
-        mqtt_username="u",
-        mqtt_password="p",
-        command_timeout_seconds=1,
-        pairing_code_ttl_seconds=300,
-        adb_path="adb",
-        cors_origins="http://localhost",
-    )
-    engine = make_engine(s)
-    # File-based URI sqlite is still sqlite, so static pool used
-    assert engine is not None
+    engine = make_engine("mysql+pymysql://user:pw@127.0.0.1:3306/db")
+    assert not isinstance(engine.pool, StaticPool)
 
 
 def test_reset_engine_clears_state() -> None:
@@ -472,7 +455,9 @@ def test_on_ack_short_topic_ignored() -> None:
     bus = MemoryBus()
     driver = WindowsAgentDriver(bus=bus, settings=s)
     # Short topic with real command_id but missing parts
-    driver.on_ack("short", {"command_id": "x", "token": "t", "ok": True, "error": None, "state": {}})
+    driver.on_ack(
+        "short", {"command_id": "x", "token": "t", "ok": True, "error": None, "state": {}}
+    )
 
 
 def test_on_state_short_topic_ignored() -> None:

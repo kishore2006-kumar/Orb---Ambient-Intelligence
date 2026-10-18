@@ -92,12 +92,12 @@
 - [x] `docs/PASS1_REPORT.md`
 
 ## Section 13 — verification (paste real results)
-- [x] `ruff format .` — result: 68 files already formatted
+- [x] `ruff format .` — result: 69 files already formatted
 - [x] `ruff check .` — result: All checks passed
 - [x] `mypy` — result: Success: no issues found in 38 source files
 - [x] `bandit -r hub agent_windows -ll` — result: no issues
 - [x] `pip-audit -r requirements.txt -r agent_windows/requirements.txt` — result: No known vulnerabilities found
-- [x] `pytest` — 156 passed, 1 skipped (MySQL test, runs in CI), coverage 91.14 %
+- [x] `pytest` — 181 passed, 1 skipped (MySQL test, runs in CI), coverage 92.23 %
 
 ## Log (newest first; one line per checkpoint)
 - 2026-10-16 — Claude — tasks T1-T12: test/engine/events/clock fixes, MqttBus topic-filter bug, token default removed, 33 new tests, 7 docs, all checks green — (patch)
