@@ -30,3 +30,13 @@ password_file C:\mosquitto\passwd.txt
 ```
 
 Leave the window open while the hub and agent run.
+
+## Troubleshooting: "Not authorized" or "not authorised"
+
+This means the broker rejected the **username or password**. It is not caused by the random client ID that the client library generates. In a test with a real broker (`allow_anonymous false`), a wrong agent password gave `Not authorized`, and the correct password connected. Check:
+
+1. The hub uses `MQTT_USERNAME=orb_hub` and its password; the agent uses `orb_agent` and its own password in `agent_windows/config.json`. Each user must exist in the password file.
+2. You restarted Mosquitto after changing the password file or the config.
+3. Test a login by hand, from `C:\Program Files\mosquitto\`: `.\mosquitto_sub.exe -h 127.0.0.1 -u orb_agent -P <password> -t test -v`
+
+`allow_anonymous true` is acceptable for development **only while the listener is bound to `127.0.0.1`**. Set it back to `false` before letting other machines connect.

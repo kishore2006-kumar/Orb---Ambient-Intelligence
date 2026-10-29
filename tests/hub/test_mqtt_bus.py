@@ -26,7 +26,7 @@ class FakeClient:
     def username_pw_set(self, user: str, password: str) -> None:
         self.credentials = (user, password)
 
-    def connect(self, host: str, port: int) -> None:
+    def connect_async(self, host: str, port: int) -> None:
         self.connected_to = (host, port)
 
     def loop_start(self) -> None:

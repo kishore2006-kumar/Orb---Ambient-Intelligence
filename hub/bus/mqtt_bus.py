@@ -67,7 +67,8 @@ class MqttBus(MessageBus):
     def start(self) -> None:
         s = self._settings
         self._client.username_pw_set(s.mqtt_username, s.mqtt_password)
-        self._client.connect(s.mqtt_host, s.mqtt_port)
+        # connect_async: the hub still starts if Mosquitto is not running yet; paho keeps retrying
+        self._client.connect_async(s.mqtt_host, s.mqtt_port)
         self._client.loop_start()
 
     def stop(self) -> None:

@@ -235,7 +235,8 @@ jobs:
 2. **SQLite engine in `create_app`:** when `database_url` contains `sqlite`, create the engine with `connect_args={"check_same_thread": False}` and `poolclass=StaticPool`; otherwise tests lose their tables. Engine creation must live in **one** place (`hub/db/session.py`), used by `create_app`.
 3. **`events.id`** must be `BigInteger().with_variant(Integer, "sqlite")` with `primary_key=True, autoincrement=True`, otherwise inserts fail on SQLite.
 4. **Clock:** services must call `from hub import clock` then `clock.utcnow()` (never `from hub.clock import utcnow`), so tests can monkeypatch `hub.clock.utcnow`.
-5. **Test-writing rules:** WebSocket rejection tests use `pytest.raises(WebSocketDisconnect)` around `client.websocket_connect(...)` and assert close code 1008. Windows-agent driver tests must **not** use threads and `time.sleep`; they register a fake agent as a `MemoryBus` subscriber on the `cmd` topic that publishes the ack immediately.
+5. **Message bus default:** `create_app(bus=None)` must create a real `MqttBus(settings)` and start it, then register all drivers (including `windows_agent`), subscribe to the ack and state topics and wire the WebSocket broadcast. It must never run without a bus. `MqttBus.start()` must use `connect_async`.
+6. **Test-writing rules:** WebSocket rejection tests use `pytest.raises(WebSocketDisconnect)` around `client.websocket_connect(...)` and assert close code 1008. Windows-agent driver tests must **not** use threads and `time.sleep`; they register a fake agent as a `MemoryBus` subscriber on the `cmd` topic that publishes the ack immediately.
 
 ## 5. Step B — database (`hub/db/models.py`, `hub/db/session.py`)
 

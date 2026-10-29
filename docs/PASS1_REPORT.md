@@ -9,8 +9,19 @@ Verified on 2026-10-16 in a Linux sandbox (Python 3.12.3), from the repo root wi
 | Types | `mypy` | Success: no issues found in 38 source files |
 | Security scan | `bandit -r hub agent_windows -ll` | No issues |
 | Dependency audit | `pip-audit -r requirements.txt -r agent_windows/requirements.txt` | No known vulnerabilities found |
-| Tests | `pytest` | 181 passed, 1 skipped |
-| Coverage | `pytest` (threshold 85 %) | 92.23 % |
+| Tests | `pytest` | 182 passed, 1 skipped |
+| Coverage | `pytest` (threshold 85 %) | 92.37 % |
+
+## End-to-end run with a real broker (Linux sandbox, 2026-10-18)
+
+Mosquitto 2.0.18 with `allow_anonymous false`, the hub started with `uvicorn hub.main:create_app --factory`, a paired agent with stubbed OS actions, SQLite database.
+
+| Step | Result |
+|---|---|
+| Hub started before the broker | `/health` OK (no crash) |
+| Agent with a wrong password | `Not authorized` |
+| Agent with the right password | `Success`; device `online`, battery 88 |
+| `POST /commands` volume_up and lock | both `acked`; the agent executed both |
 
 ## Not verified yet
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -16,10 +17,13 @@ from hub.api import devices as devices_router
 from hub.api import health as health_router
 from hub.api import ws as ws_router
 from hub.api.errors import register_error_handlers
+from hub.api.ws import make_sync_broadcast
 from hub.bus.base import MessageBus
+from hub.bus.mqtt_bus import MqttBus
 from hub.config import Settings, get_settings
 from hub.db.models import Base, Profile
 from hub.db.session import make_engine, reset_engine
+from hub.drivers.registry import init_default_drivers
 
 logger = logging.getLogger(__name__)
 
@@ -64,36 +68,20 @@ def create_app(
         Base.metadata.create_all(engine)
         _ensure_owner_profile(session_factory)
 
-        # Start bus
-        actual_bus: MessageBus | None = bus
-        if actual_bus is not None:
-            actual_bus.start()
+        # Message bus: the real MQTT bus unless one is injected (tests pass a MemoryBus).
+        actual_bus: MessageBus = bus if bus is not None else MqttBus(s)
+        actual_bus.start()
+        logger.info("Message bus started (%s)", type(actual_bus).__name__)
 
-        # Set up WebSocket broadcast
-        import asyncio
-
-        loop = asyncio.get_event_loop()
-        if actual_bus is not None:
-            from hub.api.ws import make_sync_broadcast
-            from hub.drivers.registry import init_default_drivers
-
-            sync_broadcast = make_sync_broadcast(loop)
-            app.state.broadcast = sync_broadcast
-            init_default_drivers(bus=actual_bus, settings=s, adb_runner=adb_runner)
-
-            # Subscribe to ack and state topics
-            _setup_subscriptions(actual_bus, session_factory, sync_broadcast, s)
-        else:
-            from hub.drivers.registry import init_default_drivers
-
-            init_default_drivers(settings=s, adb_runner=adb_runner)
-            app.state.broadcast = None
+        # WebSocket broadcast, drivers, and bus subscriptions
+        sync_broadcast = make_sync_broadcast(asyncio.get_event_loop())
+        app.state.broadcast = sync_broadcast
+        init_default_drivers(bus=actual_bus, settings=s, adb_runner=adb_runner)
+        _setup_subscriptions(actual_bus, session_factory, sync_broadcast, s)
 
         yield
 
-        # Cleanup
-        if actual_bus is not None:
-            actual_bus.stop()
+        actual_bus.stop()
 
     app = FastAPI(title="ORB Hub", version="0.1.0", lifespan=lifespan)
 

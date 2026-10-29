@@ -5,6 +5,8 @@ from __future__ import annotations
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from hub.drivers.registry import DriverUnavailableError
+
 
 def error_response(code: str, message: str, status: int) -> JSONResponse:
     """Create a standard error JSON response."""
@@ -62,6 +64,12 @@ def register_error_handlers(app: FastAPI) -> None:
     async def connection_error_handler(request: Request, exc: ConnectionError) -> JSONResponse:
         code = str(exc)
         return error_response(code, "ADB connection failed", 502)
+
+    @app.exception_handler(DriverUnavailableError)
+    async def driver_unavailable_handler(
+        request: Request, exc: DriverUnavailableError
+    ) -> JSONResponse:
+        return error_response("driver_unavailable", str(exc), 503)
 
     @app.exception_handler(KeyError)
     async def key_error_handler(request: Request, exc: KeyError) -> JSONResponse:

@@ -10,13 +10,13 @@ Windows 11 with PowerShell, Python 3.12 or newer, Git, MySQL Server, Mosquitto (
 
 ## Setup
 
-Every command below runs from the repo root (on this machine `K:\ORB-Project\`) unless it says otherwise.
+PowerShell needs the leading `.\` to run a script from the current folder (`.\.venv\Scripts\Activate.ps1`). Every command below runs from the repo root (on this machine `K:\ORB-Project\`) unless it says otherwise.
 
 1. Create the virtual environment and install packages:
 
    ```powershell
-   py -3.12 -m venv .venv
-   .venv\Scripts\Activate.ps1
+   py -3 -m venv .venv
+   .\.venv\Scripts\Activate.ps1
    pip install -r requirements-dev.txt
    ```
 
@@ -36,6 +36,14 @@ Every command below runs from the repo root (on this machine `K:\ORB-Project\`) 
    ```
 
    Put the printed value in `HUB_API_TOKEN`, set the real MySQL password in `DATABASE_URL`, and set `MQTT_PASSWORD` to the `orb_hub` Mosquitto password. The hub refuses to start while `HUB_API_TOKEN` is empty or still `CHANGE_ME…`.
+
+   If the MySQL password contains special characters (`@ : / # %`), URL-encode them inside `DATABASE_URL` (`@` becomes `%40`), or use letters and digits only. To encode a password:
+
+   ```powershell
+   python -c "from urllib.parse import quote_plus; print(quote_plus('your-password'))"
+   ```
+
+   An unencoded `@` makes the hub fail with `getaddrinfo failed`, because everything after the first `@` is read as the host name.
 
 4. Start Mosquitto (see `docs/MOSQUITTO.md`), then start the hub:
 
@@ -59,7 +67,7 @@ Every command below runs from the repo root (on this machine `K:\ORB-Project\`) 
    python -m agent_windows.main run
    ```
 
-6. Send a command (examples in `docs/API_CONTRACT.md`).
+6. Send a command. The body uses the keys `action` and `params` (examples and common mistakes in `docs/API_CONTRACT.md`). You can also use the interactive page at `http://127.0.0.1:8000/docs`: fill the `x-hub-token` field on every endpoint.
 
 ## Run the checks
 

@@ -12,3 +12,7 @@
 10. **MySQL test** is skipped locally unless `MYSQL_TEST_URL` is set; it runs in CI against a MySQL 8 service container.
 11. **Agent `volume`** in the state message stays `null`; reading the real volume is left for a later phase.
 12. **Pending commands are committed before the driver runs.** The audit row survives a crash mid-command, and callbacks that use their own sessions cannot roll it back.
+13. **The hub now creates its own MQTT bus.** `create_app()` started by uvicorn passes no bus, and the earlier code only started a bus when one was injected. So production never connected to MQTT, never registered the `windows_agent` driver and never subscribed to acks (found by the user's integration audit). Tests had always injected a fake bus. The spec was wrong too; see master prompt section 4b.
+14. **`MqttBus.start()` uses `connect_async`**, so the hub still starts when Mosquitto is not running yet and reconnects in the background.
+15. **A missing driver returns 503 `driver_unavailable`** with a clear message (it used to return a 400 whose code was the raw error text).
+16. **`allow_anonymous true`** in Mosquitto is a development-only workaround. The real cause of "Not authorized" is a wrong or missing username or password (see `docs/MOSQUITTO.md`).

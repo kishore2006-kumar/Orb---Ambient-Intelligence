@@ -97,8 +97,9 @@
 - [x] `mypy` — result: Success: no issues found in 38 source files
 - [x] `bandit -r hub agent_windows -ll` — result: no issues
 - [x] `pip-audit -r requirements.txt -r agent_windows/requirements.txt` — result: No known vulnerabilities found
-- [x] `pytest` — 181 passed, 1 skipped (MySQL test, runs in CI), coverage 92.23 %
+- [x] `pytest` — 182 passed, 1 skipped (MySQL test, runs in CI), coverage 92.37 %
 
 ## Log (newest first; one line per checkpoint)
+- 2026-10-18 — Claude — fixed 'No driver registered for windows_agent' (hub never created its MQTT bus), connect_async, 503 driver_unavailable, docs; verified end to end with a real Mosquitto broker
 - 2026-10-16 — Claude — tasks T1-T12: test/engine/events/clock fixes, MqttBus topic-filter bug, token default removed, 33 new tests, 7 docs, all checks green — (patch)
 - _(date)_ — _(model)_ — _(what changed)_ — _(commit hash)_

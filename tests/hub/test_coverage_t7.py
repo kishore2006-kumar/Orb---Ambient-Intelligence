@@ -35,7 +35,7 @@ class FakePahoClient:
         self.username = username
         self.password = password
 
-    def connect(self, host: str, port: int) -> None:
+    def connect_async(self, host: str, port: int) -> None:
         self.connected_host = host
         self.connected_port = port
 
@@ -369,16 +369,52 @@ def test_get_session_factory_creates_factory() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_lifespan_without_bus(test_settings: Any) -> None:
-    """create_app with no bus still creates tables and owner profile."""
+def test_lifespan_without_injected_bus_uses_mqtt_bus(
+    test_settings: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression: `uvicorn hub.main:create_app --factory` passes no bus. The hub must create
+    the MQTT bus itself and register the Windows agent driver (it used to register nothing)."""
     from fastapi.testclient import TestClient
 
-    from hub.main import create_app
+    import hub.main as hub_main
+    from hub.bus.memory_bus import MemoryBus
+    from hub.db.models import DriverKind
+    from hub.drivers.registry import get_driver
 
-    app = create_app(settings=test_settings, bus=None)
-    with TestClient(app) as c:
-        resp = c.get("/health")
-        assert resp.status_code == 200
+    class FakeMqttBus(MemoryBus):
+        started = False
+
+        def start(self) -> None:
+            FakeMqttBus.started = True
+
+    monkeypatch.setattr(hub_main, "MqttBus", lambda _settings: FakeMqttBus())
+    with TestClient(hub_main.create_app(settings=test_settings, bus=None)) as c:
+        assert c.get("/health").status_code == 200
+        assert get_driver(DriverKind.windows_agent) is not None
+    assert FakeMqttBus.started
+
+
+def test_missing_driver_returns_503_driver_unavailable(client: Any) -> None:
+    from hub.db.models import DriverKind
+    from hub.drivers import registry
+
+    created = client.post(
+        "/devices/virtual",
+        json={"name": "d", "type": "pc", "os": "windows"},
+        headers={"X-Hub-Token": "test-token"},
+    )
+    assert created.status_code == 201
+    saved = registry._registry.pop(DriverKind.virtual)
+    try:
+        resp = client.post(
+            "/commands",
+            json={"device_id": created.json()["id"], "action": "status", "params": {}},
+            headers={"X-Hub-Token": "test-token"},
+        )
+    finally:
+        registry._registry[DriverKind.virtual] = saved
+    assert resp.status_code == 503
+    assert resp.json()["detail"]["code"] == "driver_unavailable"
 
 
 # ---------------------------------------------------------------------------

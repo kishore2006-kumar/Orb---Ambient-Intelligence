@@ -3,6 +3,16 @@
 Base URL (local): `http://127.0.0.1:8000`. All bodies are JSON. Every endpoint except `GET /health`
 and `POST /devices/pair/confirm` needs the header `X-Hub-Token: <HUB_API_TOKEN>`.
 
+## Common mistakes
+
+| You sent | Result | Use instead |
+|---|---|---|
+| No `X-Hub-Token` header | 401 `unauthorized` | Add the header on every endpoint except `/health` and `/devices/pair/confirm` |
+| Body keys `command_type` / `payload` | 422 | `action` and `params` |
+| `"action": "volume"` | 422 `unknown_action` | `volume_up` or `volume_down` |
+| Android phone paired through `/devices/pair/...` | 422 `unsupported_os_for_agent_pairing` | Use `/devices/adb` or `/devices/adb/pair` |
+| Command to a device whose driver is missing | 503 `driver_unavailable` | Restart the hub and check its log |
+
 ## Examples
 
 ```powershell

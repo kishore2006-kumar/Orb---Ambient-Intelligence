@@ -7,6 +7,11 @@ from typing import Any
 from hub.db.models import DriverKind
 from hub.drivers.base import DeviceDriver
 
+
+class DriverUnavailableError(RuntimeError):
+    """Raised when no driver is registered for a device's driver kind."""
+
+
 _registry: dict[DriverKind, DeviceDriver] = {}
 _overrides: dict[DriverKind, DeviceDriver] = {}
 
@@ -22,8 +27,8 @@ def get_driver(kind: DriverKind) -> DeviceDriver:
         return _overrides[kind]
     if kind in _registry:
         return _registry[kind]
-    msg = f"No driver registered for kind: {kind}"
-    raise KeyError(msg)
+    msg = f"No driver is registered for '{kind}'. Check that the hub started its message bus."
+    raise DriverUnavailableError(msg)
 
 
 def inject_driver(kind: DriverKind, driver: DeviceDriver) -> None:
