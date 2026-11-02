@@ -190,6 +190,7 @@ Invoke-RestMethod "$base/commands?limit=5" -Headers $h | Select-Object action, s
    ```
 
    **You should see:** each row `acked`, except `evil`, which fails with `app_not_allowed`. Volume moves about 10 points each time, and Notepad opens.
+
 5. Last, run `Send-Cmd $lap.id "lock"` and then `Send-Cmd $lap.id "sleep"`. These lock and sleep the laptop that is also running the hub, so save your work first. You unlock it yourself.
 
 ## Step 9: Clean up
@@ -209,3 +210,49 @@ Invoke-RestMethod -Method Delete -Uri "$base/devices/$($v.id)" -Headers $h
 | `device_offline` | The agent stopped | Restart window C |
 
 ## Also Check README.md, DEVICE_CHECKLIST.md and MOSQUITTO.md for more info about the processes
+
+
+## THESE ARE THE FEW IMPORTANT COMMANDS FOR TESTING USING THE INTERACTIVE PAGE
+
+| action | params |risk | 
+|--------|--------|-----|
+| status | {} | safe|
+| volume_up | {} | safe|
+| volume_down | {} | safe|
+| mute | {} | safe|
+| unmute | {} | safe|
+| lock | {} | medium|
+| sleep | {} | medium|
+| launch_app | {"app":"notepad"} | medium|
+| launch_app | {"app":"evil"} | high|
+
+## FOR LAUNCH APP THERE ARE A FEW MORE COMMANDS
+
+Here are the most common short execution names you can drop straight into your Send-Cmd line:
+
+• Google Chrome: "chrome"
+• Microsoft Edge: "msedge"
+• Paint: "mspaint"
+• Snipping Tool: "snippingtool"
+• WordPad: "write"
+• Command Prompt: "cmd"
+• Control Panel: "control"
+• Windows Settings: "start ms-settings:"
+
+## USE 
+
+```powershell
+    Send-Cmd $lap.id "launch_app" '{"app":"YOUR_APP"}'
+```
+
+## TO KILL
+
+```powershell
+    Send-Cmd $lap.id "kill_app" '{"app":"YOUR_APP"}'
+```
+
+## TURN OFF THE LAPTOP
+
+```powershell
+    Send-Cmd $lap.id "shutdown"
+```
