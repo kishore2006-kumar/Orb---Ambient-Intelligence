@@ -69,6 +69,16 @@ PowerShell needs the leading `.\` to run a script from the current folder (`.\.v
 
 6. Send a command. The body uses the keys `action` and `params` (examples and common mistakes in `docs/API_CONTRACT.md`). You can also use the interactive page at `http://127.0.0.1:8000/docs`: fill the `x-hub-token` field on every endpoint.
 
+## Test the running hub yourself
+
+With the hub running (step 4), open a second PowerShell window in the repo root, activate the venv and run the API smoke test. It creates temporary virtual devices, tests every endpoint and deletes them afterwards:
+
+```powershell
+python scripts\api_smoke_test.py --token <your HUB_API_TOKEN>
+```
+
+To also send the safe commands `status`, `volume_up` and `volume_down` to a real paired device, add `--device-id <id>` (get the id from `GET /devices`). The script never sends `lock` or `sleep`. Every line prints PASS or FAIL.
+
 ## Run the checks
 
 From the repo root with the venv active:

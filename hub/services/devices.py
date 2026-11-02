@@ -121,14 +121,19 @@ def create_adb_device(
 ) -> Device:
     """Create an ADB device — runs connect then status."""
     from hub.config import get_settings
-    from hub.drivers.adb import AdbDriver, SubprocessAdbRunner
+    from hub.drivers.adb import AdbDriver, SubprocessAdbRunner, connect_failure_reason
 
     s = settings or get_settings()
     runner = adb_runner or SubprocessAdbRunner(adb_path=s.adb_path)
     driver = AdbDriver(runner=runner, settings=s)
 
     connect_result = driver.connect(address)
-    if connect_result.returncode != 0:
+    reason = connect_failure_reason(connect_result)
+    if reason == "invalid_address":
+        raise ValueError(reason)
+    if reason == "adb_not_found":
+        raise ConnectionError(reason)
+    if reason:
         msg = "adb_connect_failed"
         raise ConnectionError(msg)
 
@@ -162,14 +167,19 @@ def pair_adb_device(
 ) -> Device:
     """Pair an ADB device with a pairing code, then connect and get status."""
     from hub.config import get_settings
-    from hub.drivers.adb import AdbDriver, SubprocessAdbRunner
+    from hub.drivers.adb import AdbDriver, SubprocessAdbRunner, connect_failure_reason
 
     s = settings or get_settings()
     runner = adb_runner or SubprocessAdbRunner(adb_path=s.adb_path)
     driver = AdbDriver(runner=runner, settings=s)
 
     pair_result = driver.pair(address, pairing_code)
-    if pair_result.returncode != 0:
+    reason = connect_failure_reason(pair_result)
+    if reason in ("invalid_address", "invalid_pairing_code"):
+        raise ValueError(reason)
+    if reason == "adb_not_found":
+        raise ConnectionError(reason)
+    if reason:
         msg = "adb_pair_failed"
         raise ConnectionError(msg)
 

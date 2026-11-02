@@ -12,6 +12,10 @@ and `POST /devices/pair/confirm` needs the header `X-Hub-Token: <HUB_API_TOKEN>`
 | `"action": "volume"` | 422 `unknown_action` | `volume_up` or `volume_down` |
 | Android phone paired through `/devices/pair/...` | 422 `unsupported_os_for_agent_pairing` | Use `/devices/adb` or `/devices/adb/pair` |
 | Command to a device whose driver is missing | 503 `driver_unavailable` | Restart the hub and check its log |
+| `/devices/adb` while `adb` is not installed | 503 `adb_not_found` | Install Android platform-tools and add `adb` to PATH, or set `ADB_PATH` in `.env` |
+| ADB address that is not `host:port` | 422 `invalid_address` | Use the form `192.168.1.5:5555` |
+| ADB pairing code that is not 6 digits | 422 `invalid_pairing_code` | Use the 6-digit code shown on the phone |
+| Any unexpected hub error | 500 `internal_error` | See the hub log; report it |
 
 ## Examples
 

@@ -68,6 +68,10 @@ class SubprocessAdbRunner:
             )
         except subprocess.TimeoutExpired:
             return RunResult(returncode=-1, stdout="", stderr="adb_timeout")
+        except FileNotFoundError:
+            return RunResult(returncode=127, stdout="", stderr="adb_not_found")
+        except OSError as exc:
+            return RunResult(returncode=-1, stdout="", stderr=f"adb_error: {exc}"[:200])
 
 
 def _validate_address(address: str) -> str | None:
@@ -82,6 +86,21 @@ def _validate_address(address: str) -> str | None:
         return "invalid_address"
     if port > 65535:
         return "invalid_address"
+    return None
+
+
+def connect_failure_reason(result: RunResult) -> str | None:
+    """Return an error code if an `adb connect` / `adb pair` result means failure, else None.
+
+    Some adb versions print "failed to connect" but still exit with code 0, so the output
+    is checked as well as the exit code.
+    """
+    if result.stderr in ("invalid_address", "invalid_pairing_code", "adb_not_found"):
+        return result.stderr
+    output = result.stdout.lower()
+    failed_text = ("failed to connect", "cannot connect", "unable to connect", "failed:")
+    if result.returncode != 0 or any(text in output for text in failed_text):
+        return "failed"
     return None
 
 
@@ -101,11 +120,16 @@ class AdbDriver(DeviceDriver):
     def _error_result(self, result: RunResult) -> DriverResult:
         if result.stderr == "adb_timeout":
             return DriverResult(ok=False, error="adb_timeout", state={})
+        if result.stderr == "adb_not_found":
+            return DriverResult(ok=False, error="adb_not_found", state={})
         truncated = result.stderr[:200]
         return DriverResult(ok=False, error=f"adb_failed: {truncated}", state={})
 
     def connect(self, address: str) -> RunResult:
         """Connect to an ADB device by address."""
+        bad_address = _validate_address(address)
+        if bad_address:
+            return RunResult(returncode=-1, stdout="", stderr=bad_address)
         adb_path = self._settings.adb_path
         return self._runner.run(
             [adb_path, "connect", address],
@@ -114,6 +138,9 @@ class AdbDriver(DeviceDriver):
 
     def pair(self, address: str, code: str) -> RunResult:
         """Pair with an ADB device using a 6-digit code."""
+        bad_address = _validate_address(address)
+        if bad_address:
+            return RunResult(returncode=-1, stdout="", stderr=bad_address)
         if not _PAIRING_CODE_RE.match(code):
             return RunResult(returncode=-1, stdout="", stderr="invalid_pairing_code")
         adb_path = self._settings.adb_path

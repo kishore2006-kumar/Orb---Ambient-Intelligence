@@ -16,3 +16,8 @@
 14. **`MqttBus.start()` uses `connect_async`**, so the hub still starts when Mosquitto is not running yet and reconnects in the background.
 15. **A missing driver returns 503 `driver_unavailable`** with a clear message (it used to return a 400 whose code was the raw error text).
 16. **`allow_anonymous true`** in Mosquitto is a development-only workaround. The real cause of "Not authorized" is a wrong or missing username or password (see `docs/MOSQUITTO.md`).
+17. **ADB errors are clean.** A missing `adb` program returns 503 `adb_not_found` (it used to crash with a 500), a malformed address is validated before `adb` runs (422 `invalid_address`), and a bad pairing code is 422 `invalid_pairing_code`.
+18. **`adb connect` output is checked, not just the exit code.** Some adb versions print "failed to connect" but exit with code 0.
+19. **Catch-all handler:** any unexpected exception returns JSON 500 `internal_error` and is logged, so clients never receive a dropped connection or an HTML error page.
+20. **`scripts/api_smoke_test.py`** is an extra file, not part of the original spec. It exists so the owner can verify a running hub end to end.
+21. **Windows volume and mute use `WM_APPCOMMAND` through ctypes** (no pycaw), because it worked reliably on the owner's laptop. One command is about 2 %, so five commands give about 10 %. The Windows mute command is a **toggle**, so the agent remembers whether it muted and only sends it when the state must change. If the PC is already muted when the agent starts, the remembered state is wrong until the next toggle (best-effort, like the `locked` flag). The commands go to the foreground window, so they may do nothing while the screen is locked.

@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from hub.drivers.registry import DriverUnavailableError
+
+logger = logging.getLogger(__name__)
 
 
 def error_response(code: str, message: str, status: int) -> JSONResponse:
@@ -34,6 +38,8 @@ def register_error_handlers(app: FastAPI) -> None:
             "invalid_capabilities": "Capabilities must be a non-empty subset of known actions",
             "invalid_name": "Name must be 1–80 characters",
             "unsupported_os_for_agent_pairing": "Only Windows laptop/PC can use the agent",
+            "invalid_address": "Address must look like 192.168.1.5:5555",
+            "invalid_pairing_code": "The pairing code must be exactly 6 digits",
         }
         return error_response(code, messages.get(code, code), 422)
 
@@ -63,7 +69,24 @@ def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(ConnectionError)
     async def connection_error_handler(request: Request, exc: ConnectionError) -> JSONResponse:
         code = str(exc)
-        return error_response(code, "ADB connection failed", 502)
+        messages = {
+            "adb_not_found": (
+                "adb was not found. Install Android platform-tools and add adb to PATH, "
+                "or set ADB_PATH in .env"
+            ),
+            "adb_connect_failed": (
+                "Could not connect to the device. Check the Wi-Fi, the address and port, "
+                "and that Wireless debugging is on"
+            ),
+            "adb_pair_failed": "Pairing failed. Check the pairing address and the 6-digit code",
+        }
+        status = 503 if code == "adb_not_found" else 502
+        return error_response(code, messages.get(code, "ADB connection failed"), status)
+
+    @app.exception_handler(Exception)
+    async def unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:
+        logger.exception("Unhandled error on %s %s", request.method, request.url.path)
+        return error_response("internal_error", "Internal server error. See the hub log.", 500)
 
     @app.exception_handler(DriverUnavailableError)
     async def driver_unavailable_handler(
