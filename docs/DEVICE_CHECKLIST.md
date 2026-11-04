@@ -15,7 +15,7 @@ Tick PASS or FAIL for each row and note anything odd. Run the hub first (see REA
 | 7 | Command `launch_app` with `{"app":"unknown"}` | `failed`, error `app_not_allowed` | PASS / FAIL |
 | 8 | Command `sleep` | Laptop sleeps (note: it may hibernate if hibernation is enabled) | PASS / FAIL |
 | 9 | Command `lock` | Windows lock screen appears | PASS / FAIL |
-| 10a | Send `mute` twice, then `unmute` | Audio stays muted after the second `mute`, then unmutes | PASS / FAIL |
+| 10a | With the PC **unmuted**, send `mute`; then with it **muted**, send `mute` again, then `unmute` | `mute` always ends muted, `unmute` always ends unmuted, whatever the starting state. The agent window shows which method was used (Windows audio API or volume-key toggle) | PASS / FAIL |
 | 10b | Send `lock`, unlock the PC, then `volume_up` | Volume rises (note: it may do nothing while the screen is locked) | PASS / FAIL |
 | 10 | Stop the agent | Device becomes `offline` | PASS / FAIL |
 

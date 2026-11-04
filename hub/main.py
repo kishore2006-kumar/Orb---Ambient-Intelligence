@@ -82,6 +82,7 @@ def create_app(
         yield
 
         actual_bus.stop()
+        engine.dispose()
 
     app = FastAPI(title="ORB Hub", version="0.1.0", lifespan=lifespan)
 

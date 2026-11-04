@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import os
 import uuid
-from datetime import datetime
 
 import pytest
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from hub import clock
 from hub.db.models import (
     Base,
     Command,
@@ -51,10 +51,11 @@ def db():  # type: ignore[return]
     yield session
     session.close()
     Base.metadata.drop_all(engine)
+    engine.dispose()
 
 
 def _profile(db) -> Profile:  # type: ignore[return]
-    p = Profile(name="owner", pin_hash=None, created_at=datetime.utcnow())
+    p = Profile(name="owner", pin_hash=None, created_at=clock.utcnow())
     db.add(p)
     db.commit()
     db.refresh(p)
@@ -75,7 +76,7 @@ def _device(db, profile_id: int, name: str = "test") -> Device:  # type: ignore[
         battery=None,
         state_json={"locked": False, "muted": False, "volume": 40, "asleep": False},
         last_seen=None,
-        created_at=datetime.utcnow(),
+        created_at=clock.utcnow(),
     )
     db.add(d)
     db.commit()
@@ -117,7 +118,7 @@ def test_command_survives_device_deletion(db) -> None:  # type: ignore[no-untype
         result=None,
         error=None,
         bulk_id=None,
-        created_at=datetime.utcnow(),
+        created_at=clock.utcnow(),
         completed_at=None,
     )
     db.add(cmd)
@@ -169,9 +170,7 @@ def test_mysql_roundtrip_json_column() -> None:
     db = factory()
 
     try:
-        p = Profile(
-            name=f"owner_{uuid.uuid4().hex[:8]}", pin_hash=None, created_at=datetime.utcnow()
-        )
+        p = Profile(name=f"owner_{uuid.uuid4().hex[:8]}", pin_hash=None, created_at=clock.utcnow())
         db.add(p)
         db.commit()
         db.refresh(p)
@@ -190,7 +189,7 @@ def test_mysql_roundtrip_json_column() -> None:
             battery=None,
             state_json=state,
             last_seen=None,
-            created_at=datetime.utcnow(),
+            created_at=clock.utcnow(),
         )
         db.add(d)
         db.commit()

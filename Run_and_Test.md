@@ -239,7 +239,7 @@ Here are the most common short execution names you can drop straight into your S
 • Control Panel: "control"
 • Windows Settings: "start ms-settings:"
 
-## USE 
+## TO USE 
 
 ```powershell
     Send-Cmd $lap.id "launch_app" '{"app":"YOUR_APP"}'

@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import ctypes
+import logging
 import subprocess
 from typing import Any, Protocol, cast
+
+logger = logging.getLogger(__name__)
 
 # Windows "app command" codes (command number shifted left by 16 bits).
 WM_APPCOMMAND = 0x319
@@ -38,6 +41,29 @@ class Actions(Protocol):
 def _windll() -> Any:  # pragma: no cover
     """Return ctypes.windll typed as Any, so mypy behaves the same on Windows and Linux."""
     return cast(Any, ctypes).windll
+
+
+def _audio_endpoint() -> Any | None:  # pragma: no cover
+    """Return the Windows master-volume endpoint (pycaw), or None if it cannot be reached.
+
+    Works with both old and new pycaw versions. Any failure returns None, and the caller
+    falls back to the volume-key method.
+    """
+    try:
+        from pycaw.pycaw import AudioUtilities
+
+        speakers = AudioUtilities.GetSpeakers()
+        endpoint = getattr(speakers, "EndpointVolume", None)  # newer pycaw
+        if endpoint is None:  # older pycaw
+            from comtypes import CLSCTX_ALL
+            from pycaw.pycaw import IAudioEndpointVolume
+
+            interface = speakers.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+            endpoint = ctypes.cast(interface, ctypes.POINTER(IAudioEndpointVolume))
+        return endpoint
+    except Exception as exc:
+        logger.warning("Windows audio API unavailable (%s); using volume keys for mute", exc)
+        return None
 
 
 class WindowsActions:
@@ -74,11 +100,23 @@ class WindowsActions:
         user32.SendMessageW(hwnd, WM_APPCOMMAND, hwnd, command)
 
     def _set_mute(self, muted: bool) -> None:
-        # The Windows mute command is a toggle, so send it only when the state must change.
-        # This keeps mute and unmute idempotent (mute twice stays muted).
+        # Best method: set the real mute state through the Windows audio API (never inverted).
+        endpoint = _audio_endpoint()
+        if endpoint is not None:
+            try:
+                endpoint.SetMute(int(muted), None)
+                self._muted = muted
+                logger.info("mute set to %s through the Windows audio API", muted)
+                return
+            except Exception as exc:
+                logger.warning("SetMute failed (%s); using volume keys for mute", exc)
+        # Fallback: the mute key is a toggle, so send it only when the remembered state differs.
+        # This assumes the PC was NOT muted when the agent started; if mute and unmute seem
+        # swapped, send the opposite command once to resync.
         if muted != self._muted:
             self._send_appcommand(APPCOMMAND_VOLUME_MUTE)
             self._muted = muted
+        logger.info("mute set to %s with the volume-key toggle (state assumed)", muted)
 
     def _adjust_volume(self, delta: float) -> None:
         command = APPCOMMAND_VOLUME_UP if delta > 0 else APPCOMMAND_VOLUME_DOWN

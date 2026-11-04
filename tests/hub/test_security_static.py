@@ -68,7 +68,19 @@ def test_no_secret_like_strings() -> None:
         re.compile(r"AIza[0-9A-Za-z_-]{20,}"),
         re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
     ]
-    exclude_paths = {"tests", ".env.example"}
+    exclude_paths = {
+        "tests",
+        ".env.example",
+        ".venv",
+        "venv",
+        "site-packages",
+        "node_modules",
+        "__pycache__",
+        ".mypy_cache",
+        ".ruff_cache",
+        ".pytest_cache",
+        "htmlcov",
+    }
     extensions = {".py", ".json", ".md", ".yml"}
     violations: list[str] = []
 
